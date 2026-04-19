@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlatMate — Flat Management</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f4;
+    --bg-tertiary: #efede8;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6b67;
+    --border: #e0ddd6;
+    --border-mid: #c8c5be;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --purple: #534AB7;
+    --purple-light: #EEEDFE;
+    --purple-dark: #3C3489;
+    --purple-text: #3C3489;
+    --green-light: #E1F5EE;
+    --green-text: #0F6E56;
+    --green-btn: #3B6D11;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --amber-light: #FAEEDA;
+    --amber-text: #854F0B;
+    --blue-light: #E6F1FB;
+    --blue-border: #85B7EB;
+    --blue-title: #0C447C;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1e1e1c;
+      --bg-secondary: #2a2a28;
+      --bg-tertiary: #141412;
+      --text-primary: #f0ede8;
+      --text-secondary: #999890;
+      --border: #3a3a38;
+      --border-mid: #505050;
+      --purple-light: #26215C;
+      --purple-text: #AFA9EC;
+      --green-light: #04342C;
+      --green-text: #5DCAA5;
+      --red-light: #501313;
+      --amber-light: #412402;
+      --amber-text: #FAC775;
+      --blue-light: #042C53;
+      --blue-border: #378ADD;
+      --blue-title: #B5D4F4;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg-tertiary); color: var(--text-primary); font-size: 15px; line-height: 1.5; min-height: 100vh; }
+
+  .topbar { background: var(--bg-primary); border-bottom: 0.5px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; gap: 1rem; height: 52px; position: sticky; top: 0; z-index: 50; }
+  .logo { font-size: 16px; font-weight: 500; flex: 1; }
+  .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  .badge-admin  { background: var(--purple-light); color: var(--purple-text); }
+  .badge-member { background: var(--green-light);  color: var(--green-text);  }
+
+  .btn { border: 0.5px solid var(--border-mid); background: transparent; color: var(--text-primary); padding: 6px 14px; border-radius: var(--radius-md); cursor: pointer; font-size: 13px; font-family: inherit; }
+  .btn:hover { background: var(--bg-secondary); }
+  .btn-primary { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .btn-primary:hover { background: var(--purple-dark); border-color: var(--purple-dark); }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+  .btn-success { background: var(--green-btn); color: #fff; border-color: var(--green-btn); font-size: 12px; padding: 4px 10px; }
+  .btn-success:hover { background: #27500A; }
+  .btn-danger  { background: var(--red); color: #fff; border-color: var(--red); font-size: 12px; padding: 4px 10px; }
+  .btn-red     { color: var(--red); font-size: 11px; padding: 3px 8px; }
+
+  .main    { display: flex; min-height: calc(100vh - 52px); }
+  .sidebar { width: 200px; background: var(--bg-primary); border-right: 0.5px solid var(--border); padding: 1rem 0; flex-shrink: 0; position: sticky; top: 52px; height: calc(100vh - 52px); overflow-y: auto; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 1.25rem; cursor: pointer; font-size: 14px; color: var(--text-secondary); border-left: 2px solid transparent; }
+  .nav-item:hover  { background: var(--bg-secondary); color: var(--text-primary); }
+  .nav-item.active { color: var(--purple); border-left: 2px solid var(--purple); background: var(--purple-light); }
+
+  .content       { flex: 1; padding: 1.5rem; }
+  .section-title { font-size: 17px; font-weight: 500; margin-bottom: 1rem; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr;        gap: 12px; margin-bottom: 1.5rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 1.5rem; }
+
+  .metric       { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 1rem; }
+  .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+  .metric-val   { font-size: 22px; font-weight: 500; }
+
+  .card       { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .card-head  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .card-title { font-size: 14px; font-weight: 500; }
+
+  .row           { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--border); flex-wrap: wrap; }
+  .row:last-child { border-bottom: none; }
+
+  .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+  .av-a { background: var(--purple-light); color: var(--purple-text); }
+  .av-b { background: var(--green-light);  color: var(--green-text);  }
+  .av-c { background: var(--amber-light);  color: var(--amber-text);  }
+  .av-d { background: var(--red-light);    color: var(--red);         }
+
+  .tag         { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; white-space: nowrap; }
+  .tag-done    { background: #EAF3DE; color: #3B6D11; }
+  .tag-pending { background: var(--amber-light); color: var(--amber-text); }
+  .tag-missed  { background: var(--red-light);   color: var(--red);        }
+
+  .flex-1 { flex: 1; min-width: 100px; }
+  .muted  { font-size: 12px; color: var(--text-secondary); }
+
+  input[type=text], input[type=number], input[type=password], select, textarea {
+    width: 100%; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md);
+    padding: 8px 10px; font-size: 13px; background: var(--bg-primary); color: var(--text-primary); font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--purple); }
+
+  .form-group { margin-bottom: 12px; }
+  .form-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; display: block; }
+
+  .modal-overlay         { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .modal-overlay.hidden  { display: none; }
+  .modal                 { background: var(--bg-primary); border-radius: var(--radius-lg); padding: 1.5rem; width: 370px; border: 0.5px solid var(--border); max-height: 90vh; overflow-y: auto; }
+  .modal-title           { font-size: 15px; font-weight: 500; margin-bottom: 1rem; }
+  .modal-actions         { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1rem; }
+
+  .notice       { background: var(--blue-light); border: 0.5px solid var(--blue-border); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 10px; }
+  .notice-title { font-size: 13px; font-weight: 500; color: var(--blue-title); }
+  .notice-body  { font-size: 13px; color: var(--text-primary); margin-top: 4px; }
+  .notice-date  { font-size: 11px; color: #378ADD; margin-top: 4px; }
+
+  .prog-bar  { height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .prog-fill { height: 100%; border-radius: 3px; background: var(--purple); }
+  .separator { height: 0.5px; background: var(--border); margin: 1.25rem 0; }
+  .error-msg { font-size: 12px; color: var(--red); margin-top: 8px; min-height: 18px; }
+  code { background: var(--bg-secondary); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+
+  /* ── LOGIN ── */
+  .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg-tertiary); }
+  .login-box    { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; width: 340px; }
+  .login-logo   { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .login-sub    { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.5rem; }
+  .hidden { display: none !important; }
+
+  @media (max-width: 600px) {
+    .sidebar { width: 48px; }
+    .nav-label { display: none; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .content { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-confirm">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  EDIT NAMES, USERNAMES & PASSWORDS HERE                      ║
+// ║  username = what they type to log in (lowercase, no spaces)  ║
+// ║  password = their private password                           ║
+// ╚══════════════════════════════════════════════════════════════╝
+const USERS = [
+  { id:'admin', name:'Admin (You)', username:'thesaleem', password:'the65saleem', initials:'AD', av:'av-a', role:'admin'  },
+  { id:'m1',    name:'Yaseen',         username:'yaseen',   password:'school',   initials:'AL', av:'av-b', role:'member' },
+  { id:'m2',    name:'Shakeel',        username:'shakeel',  password:'shakeel123',  initials:'SR', av:'av-c', role:'member' },
+  { id:'m3',    name:'Baseer',        username:'baseer',  password:'baseer123',  initials:'OM', av:'av-d', role:'member' },
+];
+// ══════════════════════════════════════════════════════════════
+
+let S = {
+  loggedIn: false,
+  user: null,
+  page: 'dashboard',
+  chores: [
+    { id:1, title:'Sweep & mop floors',    assigned:'m1', due:'week 1', status:'done',    penalty:200 },
+    { id:2, title:'Clean bathrooms',       assigned:'m2', due:'week 1', status:'pending', penalty:200 },
+    { id:3, title:'Take out trash',        assigned:'m3', due:'week 1', status:'missed',  penalty:150 },
+    { id:4, title:'Wash common dishes',    assigned:'m1', due:'week 1', status:'pending', penalty:100 },
+    { id:5, title:'Wipe kitchen counters', assigned:'m2', due:'Week 1', status:'done',    penalty:100 },
+    { id:6, title:'Vacuum living room',    assigned:'m3', due:'week 1', status:'pending', penalty:150 },
+  ],
+  expenses: [
+    { id:1, title:'Electricity bill',       amount:1000, paid_by:'admin', date:'4', settled:false },
+    { id:2, title:'Internet',               amount:1800, paid_by:'m2',    date:'1',  settled:true  },
+    { id:3, title:'Groceries (milk, eggs)', amount:960,  paid_by:'m1',    date:'7', settled:false },
+    { id:4, title:'Cleaning supplies',      amount:540,  paid_by:'m3',    date:'12', settled:false },
+  ],
+  penalties: [
+    { id:1, member:'m3', reason:'Missed trash duty (Apr 8)', amount:150, paid:false },
+    { id:2, member:'m1', reason:'Missed floors (Apr 1)',     amount:200, paid:true  },
+  ],
+  notices: [
+    { id:1, title:'Rent due April 25',    body:'Please transfer your share by the 25th. Late = Rs 500 penalty.', date:'Apr 15' },
+    { id:2, title:'No guests after 11pm', body:'Quiet hours after 11pm on weekdays — flatmate agreement.',        date:'Apr 10' },
+  ],
+};
+
+const isAdmin  = () => S.user && S.user.role === 'admin';
+const getUser  = id => USERS.find(u => u.id === id) || { name:id, initials:'?', av:'av-a' };
+const av       = id => { const u = getUser(id); return `<div class="avatar ${u.av}">${u.initials}</div>`; };
+const todayStr = () => new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+const sc       = USERS.length; // share count
+
+function repaint() {
+  document.getElementById('app').innerHTML = S.loggedIn ? shell() : loginScreen();
+}
+
+// ── LOGIN ──────────────────────────────────────────────────────
+function loginScreen() {
+  return `
+  <div class="login-screen">
+    <div class="login-box">
+      <div class="login-logo">🏠 FlatMate</div>
+      <div class="login-sub">Log in with your username and password</div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="lu" placeholder="e.g. ali" autocomplete="username"
+          onkeydown="if(event.key==='Enter')document.getElementById('lp').focus()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="lp" placeholder="Your password" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:9px" onclick="doLogin()">Log in</button>
+      <div class="error-msg" id="lerr"></div>
+    </div>
+  </div>`;
+}
+
+function doLogin() {
+  const u = document.getElementById('lu').value.trim().toLowerCase();
+  const p = document.getElementById('lp').value;
+  const found = USERS.find(x => x.username === u && x.password === p);
+  if (found) {
+    S.loggedIn = true; S.user = found; S.page = 'dashboard'; repaint();
+  } else {
+    document.getElementById('lerr').textContent = 'Wrong username or password.';
+  }
+}
+
+function logout() { S.loggedIn = false; S.user = null; repaint(); }
+
+// ── SHELL ──────────────────────────────────────────────────────
+function shell() {
+  return `
+  <div class="topbar">
+    <span class="logo">🏠 FlatMate</span>
+    <span class="badge ${isAdmin() ? 'badge-admin' : 'badge-member'}">${isAdmin() ? 'Admin' : 'Member'}</span>
+    <span style="font-size:13px;color:var(--text-secondary)">${S.user.name}</span>
+    <button class="btn btn-sm" onclick="logout()">Log out</button>
+  </div>
+  <div class="main">
+    <div class="sidebar">${nav()}</div>
+    <div class="content" id="content">${page()}</div>
+  </div>`;
+}
+
+function nav() {
+  const items = [
+    { id:'dashboard', label:'Dashboard', icon:'⊞' },
+    { id:'chores',    label:'Chores',    icon:'✓' },
+    { id:'expenses',  label:'Expenses',  icon:'₨' },
+    { id:'penalties', label:'Penalties', icon:'!', admin:true },
+    { id:'members',   label:'Members',   icon:'⊙', admin:true },
+    { id:'notices',   label:'Notices',   icon:'◈' },
+  ];
+  return items.filter(i => !i.admin || isAdmin()).map(i => `
+    <div class="nav-item ${S.page===i.id?'active':''}" data-page="${i.id}" onclick="go('${i.id}')">
+      <span style="width:18px;text-align:center;flex-shrink:0">${i.icon}</span>
+      <span class="nav-label">${i.label}</span>
+    </div>`).join('');
+}
+
+function go(p) {
+  if (!isAdmin() && ['penalties','members'].includes(p)) return;
+  S.page = p;
+  document.getElementById('content').innerHTML = page();
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === p));
+}
+
+function page() {
+  return ({ dashboard:dash, chores:choresPage, expenses:expensesPage, penalties:penaltiesPage, members:membersPage, notices:noticesPage }[S.page] || dash)();
+}
+
+function refresh() { document.getElementById('content').innerHTML = page(); }
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+function dash() { return isAdmin() ? adminDash() : memberDash(); }
+
+function adminDash() {
+  const pen  = S.penalties.filter(p=>!p.paid).reduce((a,p)=>a+p.amount,0);
+  const unst = S.expenses.filter(e=>!e.settled).reduce((a,e)=>a+e.amount,0);
+  const done = S.chores.filter(c=>c.status==='done').length;
+  const miss = S.chores.filter(c=>c.status==='missed').length;
+  const pct  = Math.round(done/S.chores.length*100);
+  return `
+  <div class="section-title">Overview</div>
+  <div class="grid-4">
+    <div class="metric"><div class="metric-label">Chores done</div><div class="metric-val">${done}/${S.chores.length}</div></div>
+    <div class="metric"><div class="metric-label">Missed</div><div class="metric-val" style="color:var(--red)">${miss}</div></div>
+    <div class="metric"><div class="metric-label">Unsettled (Rs)</div><div class="metric-val">${unst.toLocaleString()}</div></div>
+    <div class="metric"><div class="metric-label">Penalties due (Rs)</div><div class="metric-val" style="color:var(--red)">${pen}</div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-title">Chore completion this week</span></div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+    <div class="muted" style="margin-top:6px">${pct}% completed</div>
+    <div class="separator"></div>
+    ${S.chores.slice(0,4).map(c=>`
+      <div class="row">${av(c.assigned)}
+        <div class="flex-1"><div style="font-size:13px">${c.title}</div><div class="muted">${getUser(c.assigned).name} · ${c.due}</div></div>
+        <span class="tag tag-${c.status}">${c.status}</span>
+      </div>`).join('')}
+    <div style="margin-top:10px"><button class="btn btn-sm" onclick="go('chores')">See all →</button></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head"><span class="card-title">Recent expenses</span></div>
+      ${S.expenses.slice(0,3).map(e=>`
+        <div class="row">
+          <div class="flex-1"><div style="font-size:13px">${e.title}</div><div class="muted">${e.date} · ${getUser(e.paid_by).name}</div></div>
+          <div style="font-size:13px;font-weight:500">Rs ${e.amount.toLocaleString()}</div>
+        </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Latest notices</span></div>
+      ${S.notices.slice(0,2).map(n=>`
+        <div class="notice" style="margin-bottom:8px">
+          <div class="notice-title">${n.title}</div>
+          <div class="notice-body" style="font-size:12px">${n.body.substring(0,60)}...</div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function memberDash() {
+  const me = S.user.id;
+  const myC  = S.chores.filter(c=>c.assigned===me);
+  const myS  = S.expenses.filter(e=>!e.settled).reduce((a,e)=>a+Math.round(e.amount/sc),0);
+  const myP  = S.penalties.filter(p=>p.member===me&&!p.paid).reduce((a,p)=>a+p.amount,0);
+  return `
+  <div style="max-width:540px">
+    <div class="section-title">Welcome, ${S.user.name}</div>
+    <div class="grid-3">
+      <div class="metric"><div class="metric-label">Your chores</div><div class="metric-val">${myC.length}</div></div>
+      <div class="metric"><div class="metric-label">Expense share (Rs)</div><div class="metric-val">${myS.toLocaleString()}</div></div>
+      <div class="metric"><div class="metric-label">Penalties owed (Rs)</div><div class="metric-val" style="color:var(--red)">${myP}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Your chores this week</span></div>
+      ${myC.length===0 ? '<div class="muted">No chores assigned to you.</div>' : myC.map(c=>`
+        <div class="row">
+          <div class="flex-1"><div style="font-size:13px">${c.title}</div><div class="muted">${c.due} · Penalty if missed: Rs ${c.penalty}</div></div>
+          <span class="tag tag-${c.status}">${c.status}</span>
+          ${c.status==='pending'?`<button class="btn-success btn" onclick="markDone(${c.id})">Mark done</button>`:''}
+        </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Your unsettled bills</span></div>
+      ${S.expenses.filter(e=>!e.settled).length===0 ? '<div class="muted">All bills settled! 🎉</div>' :
+        S.expenses.filter(e=>!e.settled).map(e=>`
+          <div class="row">
+            <div class="flex-1"><div style="font-size:13px">${e.title}</div><div class="muted">${e.date} · Paid by ${getUser(e.paid_by).name}</div></div>
+            <div style="font-size:13px;font-weight:500">Rs ${Math.round(e.amount/sc).toLocaleString()}</div>
+          </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Notices from admin</span></div>
+      ${S.notices.length===0 ? '<div class="muted">No notices.</div>' : S.notices.map(n=>`
+        <div class="notice">
+          <div class="notice-title">${n.title}</div>
+          <div class="notice-body">${n.body}</div>
+          <div class="notice-date">${n.date}</div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function markDone(id) { const c=S.chores.find(x=>x.id===id); if(c)c.status='done'; refresh(); }
+
+// ── CHORES ────────────────────────────────────────────────────
+function choresPage() {
+  const admin = isAdmin();
+  const list  = admin ? S.chores : S.chores.filter(c=>c.assigned===S.user.id);
+  return `
+  <div class="card">
+    <div class="card-head"><span class="card-title">${admin?'All chores':'Your chores'}</span>
+      ${admin?`<button class="btn btn-primary btn-sm" onclick="openAddChore()">+ Add chore</button>`:''}</div>
+    ${list.length===0?'<div class="muted">No chores.</div>':list.map(c=>`
+      <div class="row">${av(c.assigned)}
+        <div class="flex-1">
+          <div style="font-size:13px">${c.title}</div>
+          <div class="muted">${getUser(c.assigned).name} · ${c.due} · Penalty: Rs ${c.penalty}</div>
+        </div>
+        <span class="tag tag-${c.status}">${c.status}</span>
+        ${admin?`
+          <button class="btn-success btn" onclick="choreStatus(${c.id},'done')"   style="font-size:11px;padding:3px 8px">Done</button>
+          <button class="btn-danger btn"  onclick="choreStatus(${c.id},'missed')" style="font-size:11px;padding:3px 8px">Missed</button>
+          <button class="btn btn-red btn-sm" onclick="delChore(${c.id})">✕</button>`
+          :(c.status==='pending'?`<button class="btn-success btn" onclick="markDone(${c.id})">Mark done</button>`:'')}
+      </div>`).join('')}
+  </div>`;
+}
+
+function choreStatus(id, status) {
+  const c = S.chores.find(x=>x.id===id); if(!c) return;
+  c.status = status;
+  if (status==='missed' && !S.penalties.find(p=>p.member===c.assigned&&p.reason.includes(c.title)))
+    S.penalties.push({id:Date.now(),member:c.assigned,reason:`Missed: ${c.title}`,amount:c.penalty,paid:false});
+  refresh();
+}
+function delChore(id) { S.chores=S.chores.filter(c=>c.id!==id); refresh(); }
+
+// ── EXPENSES ──────────────────────────────────────────────────
+function expensesPage() {
+  const admin = isAdmin();
+  const ust   = S.expenses.filter(e=>!e.settled).reduce((a,e)=>a+e.amount,0);
+  return `
+  <div class="card">
+    <div class="card-head"><span class="card-title">Shared expenses</span>
+      ${admin?`<button class="btn btn-primary btn-sm" onclick="openAddExpense()">+ Add expense</button>`:''}</div>
+    <div class="muted" style="margin-bottom:12px">
+      Unsettled total: <strong>Rs ${ust.toLocaleString()}</strong> &nbsp;·&nbsp; Your share: <strong>Rs ${Math.round(ust/sc).toLocaleString()}</strong>
+    </div>
+    ${S.expenses.map(e=>`
+      <div class="row">${av(e.paid_by)}
+        <div class="flex-1">
+          <div style="font-size:13px">${e.title}</div>
+          <div class="muted">${e.date} · Paid by ${getUser(e.paid_by).name} · Each owes: Rs ${Math.round(e.amount/sc).toLocaleString()}</div>
+        </div>
+        <div style="font-size:14px;font-weight:500">Rs ${e.amount.toLocaleString()}</div>
+        <span class="tag ${e.settled?'tag-done':'tag-pending'}">${e.settled?'settled':'unsettled'}</span>
+        ${admin?`
+          <button class="btn btn-sm" onclick="toggleSettle(${e.id})" style="font-size:11px">${e.settled?'Unsettle':'Settle'}</button>
+          <button class="btn btn-red btn-sm" onclick="delExpense(${e.id})">✕</button>`:''}</div>`).join('')}
+  </div>`;
+}
+function toggleSettle(id) { const e=S.expenses.find(x=>x.id===id); if(e)e.settled=!e.settled; refresh(); }
+function delExpense(id)    { S.expenses=S.expenses.filter(e=>e.id!==id); refresh(); }
+
+// ── PENALTIES ─────────────────────────────────────────────────
+function penaltiesPage() {
+  return `
+  <div class="card">
+    <div class="card-head"><span class="card-title">Penalties</span>
+      <button class="btn btn-primary btn-sm" onclick="openAddPenalty()">+ Add penalty</button></div>
+    ${S.penalties.length===0?'<div class="muted">No penalties 🎉</div>':S.penalties.map(p=>`
+      <div class="row">${av(p.member)}
+        <div class="flex-1"><div style="font-size:13px">${getUser(p.member).name}</div><div class="muted">${p.reason}</div></div>
+        <div style="font-size:14px;font-weight:500;color:var(--red)">Rs ${p.amount}</div>
+        <span class="tag ${p.paid?'tag-done':'tag-missed'}">${p.paid?'paid':'unpaid'}</span>
+        <button class="btn btn-sm" onclick="togglePenalty(${p.id})" style="font-size:11px">${p.paid?'Unmark':'Mark paid'}</button>
+        <button class="btn btn-red btn-sm" onclick="delPenalty(${p.id})">✕</button>
+      </div>`).join('')}
+  </div>`;
+}
+function togglePenalty(id) { const p=S.penalties.find(x=>x.id===id); if(p)p.paid=!p.paid; refresh(); }
+function delPenalty(id)    { S.penalties=S.penalties.filter(p=>p.id!==id); refresh(); }
+
+// ── MEMBERS ───────────────────────────────────────────────────
+function membersPage() {
+  return `
+  <div class="card">
+    <div class="card-head"><span class="card-title">Flatmates & credentials</span></div>
+    <div class="muted" style="margin-bottom:12px">Only you can see this page. Share each person's login details with them directly.</div>
+    ${USERS.map(u=>`
+      <div class="row">${av(u.id)}
+        <div class="flex-1">
+          <div style="font-size:13px;font-weight:500">${u.name}</div>
+          <div class="muted" style="margin-top:2px">
+            Username: <code>${u.username}</code> &nbsp; Password: <code>${u.password}</code>
+          </div>
+        </div>
+        <span class="badge ${u.role==='admin'?'badge-admin':'badge-member'}">${u.role}</span>
+        <div style="font-size:12px;color:var(--text-secondary)">
+          Chores: ${S.chores.filter(c=>c.assigned===u.id).length} &nbsp;|&nbsp;
+          Penalties: Rs ${S.penalties.filter(p=>p.member===u.id&&!p.paid).reduce((a,p)=>a+p.amount,0)}
+        </div>
+      </div>`).join('')}
+  </div>`;
+}
+
+// ── NOTICES ───────────────────────────────────────────────────
+function noticesPage() {
+  const admin = isAdmin();
+  return `
+  <div class="card">
+    <div class="card-head"><span class="card-title">Notices & announcements</span>
+      ${admin?`<button class="btn btn-primary btn-sm" onclick="openAddNotice()">+ Post notice</button>`:''}</div>
+    ${S.notices.length===0?'<div class="muted">No notices yet.</div>':S.notices.map(n=>`
+      <div class="notice">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="notice-title">${n.title}</div>
+          ${admin?`<button onclick="delNotice(${n.id})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:13px">✕</button>`:''}
+        </div>
+        <div class="notice-body">${n.body}</div>
+        <div class="notice-date">${n.date}</div>
+      </div>`).join('')}
+  </div>`;
+}
+function delNotice(id) { S.notices=S.notices.filter(n=>n.id!==id); refresh(); }
+
+// ── MODALS ────────────────────────────────────────────────────
+function openModal(title, body, onSave) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-confirm').onclick = onSave;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+
+function openAddChore() {
+  const mems = USERS.filter(u=>u.role==='member');
+  openModal('Add chore', `
+    <div class="form-group"><label class="form-label">Task name</label><input type="text" id="c-title" placeholder="e.g. Clean kitchen"></div>
+    <div class="form-group"><label class="form-label">Assign to</label>
+      <select id="c-assign">${mems.map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div>
+    <div class="form-group"><label class="form-label">Due Period</label>
+  <select id="c-due">
+    <option>Week 1</option>
+    <option>Week 2</option>
+    <option>Week 3</option>
+    <option>Week 4</option>
+  </select></div>
+    <div class="form-group"><label class="form-label">Penalty if missed (Rs)</label><input type="number" id="c-pen" value="150"></div>`,
+  () => {
+    const t = document.getElementById('c-title').value.trim(); if(!t) return;
+    S.chores.push({ id:Date.now(), title:t, assigned:document.getElementById('c-assign').value, due:document.getElementById('c-due').value, status:'pending', penalty:Number(document.getElementById('c-pen').value)||150 });
+    closeModal(); refresh();
+  });
+}
+
+function openAddExpense() {
+  openModal('Add expense', `
+    <div class="form-group"><label class="form-label">Description</label><input type="text" id="e-title" placeholder="e.g. Gas bill"></div>
+    <div class="form-group"><label class="form-label">Amount (Rs)</label><input type="number" id="e-amount" placeholder="0"></div>
+    <div class="form-group"><label class="form-label">Paid by</label>
+      <select id="e-paid">${USERS.map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select></div>
+    <div class="form-group"><label class="form-label">Date</label><input type="text" id="e-date" placeholder="e.g. Apr 19"></div>`,
+  () => {
+    const t=document.getElementById('e-title').value.trim();
+    const a=Number(document.getElementById('e-amount').value);
+    if(!t||!a) return;
+    S.expenses.push({ id:Date.now(), title:t, amount:a, paid_by:document.getElementById('e-paid').value, date:document.getElementById('e-date').value||todayStr(), settled:false });
+    closeModal(); refresh();
+  });
+}
+
+function openAddPenalty() {
+  const mems = USERS.filter(u=>u.role==='member');
+  openModal('Add penalty', `
+    <div class="form-group"><label class="form-label">Member</label>
+      <select id="p-mem">${mems.map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select></div>
+    <div class="form-group"><label class="form-label">Reason</label><input type="text" id="p-reason" placeholder="e.g. Missed kitchen duty"></div>
+    <div class="form-group"><label class="form-label">Amount (Rs)</label><input type="number" id="p-amt" value="150"></div>`,
+  () => {
+    const r=document.getElementById('p-reason').value.trim(); if(!r) return;
+    S.penalties.push({ id:Date.now(), member:document.getElementById('p-mem').value, reason:r, amount:Number(document.getElementById('p-amt').value)||150, paid:false });
+    closeModal(); refresh();
+  });
+}
+
+function openAddNotice() {
+  openModal('Post notice', `
+    <div class="form-group"><label class="form-label">Title</label><input type="text" id="n-title" placeholder="e.g. Water off Sunday"></div>
+    <div class="form-group"><label class="form-label">Message</label><textarea id="n-body" rows="3" placeholder="Write your message..."></textarea></div>`,
+  () => {
+    const t=document.getElementById('n-title').value.trim();
+    const b=document.getElementById('n-body').value.trim();
+    if(!t||!b) return;
+    S.notices.unshift({ id:Date.now(), title:t, body:b, date:todayStr() });
+    closeModal(); refresh();
+  });
+}
+const savedData = localStorage.getItem('flatmate_v1');
+if (savedData) {
+  S = JSON.parse(savedData);
+}
+function saveToLocal() {
+  localStorage.setItem('flatmate_v1', JSON.stringify(S));
+}
+const oldRefresh = refresh;
+refresh = function() {
+  saveToLocal();
+  oldRefresh();
+};
+repaint();
+</script>
+</body>
+</html>
